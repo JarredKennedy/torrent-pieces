@@ -30,16 +30,11 @@ def main(watch=False):
 
 	torrentList.findTorrents()
 
+	for i in range(1, 21):
+		torrentList.torrents[str(i)] = {'name': "Some torrent #{}".format(i)}
+
 	view.setTorrents(torrentList.torrents)
 
-	# SELECT A TORRENT TO INSPECT PIECES
-	# ---
-	#     NAME					TYPE		FILES
-	# [ ] Some torrent A		video		3
-	# [x] Some torrent B		video		2
-	# 26 MORE TORRENTS
-	# ---
-	# (q)uit (r)efresh torrent list
 
 
 def parseDirectoryPaths(pathExpression):
