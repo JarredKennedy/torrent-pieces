@@ -1,46 +1,107 @@
 import sys
 import os
+from getch import getch
 
 from bencoding import Bdecoder
-from torrents import TorrentList, TorrentReader
+from torrents import TorrentStore, TorrentReader
 from downloadfinder import DownloadFinder
-from view import View
+from views import SelectTorrentView, TorrentPiecesView
 
-def main(watch=False):
-	envTorrentsDirs = "TORP_TORRENTS"
-	envDownloadsDirs = "TORP_DOWNLOADS"
+parseDirectoryPaths = lambda pathExpression: map(lambda path: path if path[-1] == os.sep else path + os.sep, pathExpression.split(':'))
 
-	if envTorrentsDirs not in os.environ or envDownloadsDirs not in os.environ:
-		print("TORP_TORRENTS and TORP_DOWNLOADS environment variables must be set")
-		exit(1)
+envTorrentsDirs = "TORP_TORRENTS"
+envDownloadsDirs = "TORP_DOWNLOADS"
 
-	torrentsDirList = parseDirectoryPaths(os.environ[envTorrentsDirs])
-	downloadsDirList = parseDirectoryPaths(os.environ[envDownloadsDirs])
+if envTorrentsDirs not in os.environ or envDownloadsDirs not in os.environ:
+	print("TORP_TORRENTS and TORP_DOWNLOADS environment variables must be set")
+	exit(1)
 
-	torrentsDirList = filter(os.path.isdir, torrentsDirList)
-	downloadsDirList = filter(os.path.isdir, downloadsDirList)
+torrentsDirList = parseDirectoryPaths(os.environ[envTorrentsDirs])
+downloadsDirList = parseDirectoryPaths(os.environ[envDownloadsDirs])
 
-	bdecoder = Bdecoder()
-	torrentReader = TorrentReader(bdecoder)
+torrentsDirList = filter(os.path.isdir, torrentsDirList)
+downloadsDirList = filter(os.path.isdir, downloadsDirList)
 
-	torrentList = TorrentList(torrentReader, torrentsDirList)
-	downloadFinder = DownloadFinder(downloadsDirList)
+bdecoder = Bdecoder()
+torrentReader = TorrentReader(bdecoder)
 
-	view = View()
+torrentStore = TorrentStore(torrentReader, torrentsDirList)
+downloadFinder = DownloadFinder(downloadsDirList)
 
-	torrentList.findTorrents()
+torrentData = {}
+piecesData = {}
 
-	for i in range(1, 21):
-		torrentList.torrents[str(i)] = {'name': "Some torrent #{}".format(i)}
+selectTorrentView = SelectTorrentView(torrentData)
+torrentPiecesView = TorrentPiecesView(piecesData)
 
-	view.setTorrents(torrentList.torrents)
+currentView = None
 
+def main():
+	setView(selectTorrentView)
+	handleUserInput()
 
+def handleUserInput():
+	ESCAPE = '\x1b'
+	ARROW_KEY_UP = '[A'
+	ARROW_KEY_DOWN = '[B'
+	ARROW_KEY_RIGHT = '[C'
+	ARROW_KEY_LEFT = '[D'
+	ENTER = '\x0A'
 
-def parseDirectoryPaths(pathExpression):
-	return map(lambda path: path if path[-1] == os.sep else path + os.sep, pathExpression.split(':'))
+	key = getch()
 
-if __name__ == "__main__":
-	watch = "-w" in sys.argv
+	if key == ESCAPE:
+		key = getch() + getch()
 
-	main(watch);
+		currentTorrentIndex = 0
+		if torrentData['currentTorrent'] in torrentData['torrentOrder']:
+			currentTorrentIndex = torrentData['torrentOrder'].index(torrentData['currentTorrent'])
+
+		if currentView == selectTorrentView and key == ARROW_KEY_DOWN:
+			nextTorrentIndex = min(currentTorrentIndex + 1, len(torrentData['torrentOrder']) - 1)
+			focusTorrent(torrentData['torrentOrder'][nextTorrentIndex])
+		elif currentView == selectTorrentView and key == ARROW_KEY_UP:
+			nextTorrentIndex = max(currentTorrentIndex - 1, 0)
+			focusTorrent(torrentData['torrentOrder'][nextTorrentIndex])
+	elif key == ENTER:
+		selectTorrent(torrentData['currentTorrent'])
+	elif key == 'q':
+		quitProgram()
+	else:
+		handleUserInput()
+
+def focusTorrent(torrentHash):
+	torrentData['currentTorrent'] = torrentHash
+	selectTorrentView.render()
+	handleUserInput()
+
+def selectTorrent(torrentHash):
+	piecesData['torrent'] = torrentStore.torrents[torrentHash]
+	setView(torrentPiecesView)
+	handleUserInput()
+
+def quitProgram():
+	print("\nQuit")
+	exit()
+
+def setView(view):
+	global currentView
+
+	currentView = view
+
+	if view == selectTorrentView:
+		torrentStore.findTorrents()
+
+		for i in range(1, 21):
+			torrentStore.torrents[str(i)] = {'name': "Some torrent #{}".format(i)}
+
+		torrentData['torrents'] = torrentStore.torrents
+		torrentData['torrentOrder'] = list(torrentStore.torrents.keys())
+		torrentData['currentTorrent'] = torrentData['torrentOrder'][0]
+
+		selectTorrentView.render()
+	elif view == torrentPiecesView:
+		torrentPiecesView.render()
+
+if __name__ == '__main__':
+	main()

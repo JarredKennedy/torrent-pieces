@@ -3,7 +3,7 @@ import hashlib
 
 from bencoding import BencodeNode
 
-class TorrentList:
+class TorrentStore:
 
 	directories = []
 	torrentReader = None
