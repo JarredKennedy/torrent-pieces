@@ -7,15 +7,8 @@ class View:
 	# Data for rendering the view
 	state = None
 
-	def setTorrents(self, torrents):
-		self.torrents = torrents
-
-		self.checkDimensions()
-
-		self.focussedTorrent = 0
-		self.frameStart = 0
-		self.frameEnd = min(self.rows - 7 - self.frameStart, len(self.torrents) - 1)
-
+	def update(self, state):
+		self.state = state
 		self.render()
 
 	def checkDimensions(self):
@@ -77,7 +70,7 @@ class SelectTorrentView(View):
 			print("No torrents found")
 
 		print("---")
-		print("(ENTER) Select\t(Q)uit\t(R)efresh torrents")
+		print("(ENTER) Select  (R)efresh torrents  (Q)uit")
 
 class TorrentPiecesView(View):
 
@@ -87,4 +80,9 @@ class TorrentPiecesView(View):
 	def render(self):
 		self.clear()
 
-		print("Torrent pieces view for", self.state['torrent']['name'])
+		print("TORRENT PIECES")
+		print("---")
+		print(self.state['torrent']['name'])
+
+		print("---")
+		print("(B)ack  (R)efresh pieces  (Q)uit")

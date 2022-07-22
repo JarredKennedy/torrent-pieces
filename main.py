@@ -4,7 +4,7 @@ from getch import getch
 
 from bencoding import Bdecoder
 from torrents import TorrentStore, TorrentReader
-from downloadfinder import DownloadFinder
+from downloads import Downloads
 from views import SelectTorrentView, TorrentPiecesView
 
 parseDirectoryPaths = lambda pathExpression: map(lambda path: path if path[-1] == os.sep else path + os.sep, pathExpression.split(':'))
@@ -19,14 +19,14 @@ if envTorrentsDirs not in os.environ or envDownloadsDirs not in os.environ:
 torrentsDirList = parseDirectoryPaths(os.environ[envTorrentsDirs])
 downloadsDirList = parseDirectoryPaths(os.environ[envDownloadsDirs])
 
-torrentsDirList = filter(os.path.isdir, torrentsDirList)
-downloadsDirList = filter(os.path.isdir, downloadsDirList)
+torrentsDirList = list(filter(os.path.isdir, torrentsDirList))
+downloadsDirList = list(filter(os.path.isdir, downloadsDirList))
 
 bdecoder = Bdecoder()
 torrentReader = TorrentReader(bdecoder)
 
 torrentStore = TorrentStore(torrentReader, torrentsDirList)
-downloadFinder = DownloadFinder(downloadsDirList)
+downloads = Downloads(downloadsDirList)
 
 torrentData = {}
 piecesData = {}
@@ -63,8 +63,10 @@ def handleUserInput():
 		elif currentView == selectTorrentView and key == ARROW_KEY_UP:
 			nextTorrentIndex = max(currentTorrentIndex - 1, 0)
 			focusTorrent(torrentData['torrentOrder'][nextTorrentIndex])
-	elif key == ENTER:
+	elif currentView == selectTorrentView and key == ENTER:
 		selectTorrent(torrentData['currentTorrent'])
+	elif currentView == torrentPiecesView and key == 'b':
+		returnToSelectTorrent()
 	elif key == 'q':
 		quitProgram()
 	else:
@@ -76,8 +78,15 @@ def focusTorrent(torrentHash):
 	handleUserInput()
 
 def selectTorrent(torrentHash):
-	piecesData['torrent'] = torrentStore.torrents[torrentHash]
+	torrent = torrentStore.torrents[torrentHash]
+	piecesData['torrent'] = torrent
+	piecesData['files'] = downloads.findTorrentFiles(torrent)
+	torrentPiecesView.update(piecesData)
 	setView(torrentPiecesView)
+	handleUserInput()
+
+def returnToSelectTorrent():
+	setView(selectTorrentView)
 	handleUserInput()
 
 def quitProgram():
@@ -100,8 +109,6 @@ def setView(view):
 		torrentData['currentTorrent'] = torrentData['torrentOrder'][0]
 
 		selectTorrentView.render()
-	elif view == torrentPiecesView:
-		torrentPiecesView.render()
 
 if __name__ == '__main__':
 	main()
