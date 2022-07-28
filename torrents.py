@@ -35,7 +35,7 @@ class TorrentReader:
 	def readFile(self, filePath):
 		file = open(filePath, 'rb')
 		tree = self.decoder.decode(file)
-		
+
 		if type(tree) != BencodeNode:
 			raise Exception("Expected BencodeNode got {}".format(type(tree)))
 
@@ -63,15 +63,20 @@ class TorrentReader:
 		torrent['files'] = []
 		fileListNode = self.pluckNode(infoNode, b'files')
 
-		fileNode = fileListNode.child
-		while fileNode != None:
-			filePaths = self.treeToList(self.pluckNode(fileNode, b'path'))
-			filePaths = list(map(lambda path: path.decode('utf-8'), filePaths))
-			fileSize = (self.pluckNode(fileNode, b'length')).value
-			
-			torrent['files'].append((filePaths, fileSize))
+		if fileListNode != None:
+			fileNode = fileListNode.child
 
-			fileNode = fileNode.sibling
+			while fileNode != None:
+				filePaths = self.treeToList(self.pluckNode(fileNode, b'path'))
+				filePaths = list(map(lambda path: path.decode('utf-8'), filePaths))
+				fileSize = (self.pluckNode(fileNode, b'length')).value
+
+				torrent['files'].append((filePaths, fileSize))
+
+				fileNode = fileNode.sibling
+		else:
+			torrentLength = (self.pluckNode(infoNode, b'length')).value
+			torrent['files'].append((torrent['name'], torrentLength))
 
 		return torrent
 

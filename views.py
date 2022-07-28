@@ -80,9 +80,12 @@ class TorrentPiecesView(View):
 	def render(self):
 		self.clear()
 
+		numPieces = len(self.state['havePieces'])
+		totalPieces = self.state['torrent']['piece_count']
+
 		print("TORRENT PIECES")
 		print("---")
 		print(self.state['torrent']['name'])
-
+		print("{:.2f}% Completed ({}/{} pieces)".format((numPieces / totalPieces) * 100, numPieces, totalPieces))
 		print("---")
 		print("(B)ack  (R)efresh pieces  (Q)uit")

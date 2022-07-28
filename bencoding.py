@@ -32,11 +32,11 @@ class Bdecoder:
 
 			if read == b'e': node.value = 0
 
-			while read != '' and read != b'e' and file.tell() <= offsetMax and ((read >= b'0' and read <= b'9') or (len(node.value) == 1 and read == b'-')):
+			while read != b'' and read != b'e' and file.tell() <= offsetMax and ((read >= b'0' and read <= b'9') or (len(node.value) == 1 and read == b'-')):
 				node.value += read
 				read = file.read(1)
 
-			if read == '':
+			if read == b'':
 				raise Exception("Invalid integer: found EOF @{}".format(offset))
 			elif read != b'e':
 				if (read < b'0' or read > b'9'):
@@ -100,7 +100,7 @@ class Bdecoder:
 				length += read
 				read = file.read(1)
 
-			if read == '':
+			if read == b'':
 				raise Exception("Invalid string: found EOF @{}".format(offset))
 			elif read != b':' and (read < b'0' or read > b'9'):
 				raise Exception("Invalid string: value at {} does not represent a number @{}".format(file.tell(), offset))

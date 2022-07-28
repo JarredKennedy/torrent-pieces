@@ -81,6 +81,8 @@ def selectTorrent(torrentHash):
 	torrent = torrentStore.torrents[torrentHash]
 	piecesData['torrent'] = torrent
 	piecesData['files'] = downloads.findTorrentFiles(torrent)
+	piecesData['havePieces'] = downloads.readPieces(torrent, piecesData['files'])
+
 	torrentPiecesView.update(piecesData)
 	setView(torrentPiecesView)
 	handleUserInput()
@@ -101,8 +103,8 @@ def setView(view):
 	if view == selectTorrentView:
 		torrentStore.findTorrents()
 
-		for i in range(1, 21):
-			torrentStore.torrents[str(i)] = {'name': "Some torrent #{}".format(i)}
+		# for i in range(1, 21):
+		# 	torrentStore.torrents[str(i)] = {'name': "Some torrent #{}".format(i)}
 
 		torrentData['torrents'] = torrentStore.torrents
 		torrentData['torrentOrder'] = list(torrentStore.torrents.keys())
