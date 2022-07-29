@@ -37,12 +37,16 @@ class SelectTorrentView(View):
 		if len(self.state['torrentOrder']) > 0:
 			print("    NAME")
 
-			if self.frameEnd < 1:
-				self.frameEnd = min(self.terminalSize[1] - self.fixtureRows, len(self.state['torrentOrder']) - 1)
-
 			currentTorrentIndex = 0
 			if self.state['currentTorrent'] in self.state['torrentOrder']:
 				currentTorrentIndex = self.state['torrentOrder'].index(self.state['currentTorrent'])
+			
+			if abs(self.lastSelected - currentTorrentIndex) > 1:
+				self.frameStart = 0
+				self.frameEnd = 0
+
+			if self.frameEnd < 1:
+				self.frameEnd = min(self.terminalSize[1] - self.fixtureRows, len(self.state['torrentOrder']) - 1)
 
 			if currentTorrentIndex > self.lastSelected and currentTorrentIndex > self.frameEnd:
 				self.frameEnd = min(self.frameEnd + 1, len(self.state['torrentOrder']) - 1)
